@@ -8,6 +8,7 @@ DISABLE Display.ShowMessageDialog.ShowMessage Message: $'''fuzzy: %LcsFuzzyRatio
 **REGION CSV Table Comparsion
 CALL LcsCsvCompare
 **ENDREGION
+
 FUNCTION LcsCsvCompare GLOBAL
     @@statistics_statistics_statistics_Input_File: '1'
 @@statistics_statistics_statistics_Action_Submit: '1'
@@ -49,7 +50,7 @@ Display.ShowCustomDialog CardTemplateJson: '''{
     # new csv file name with datetime
     DateTime.GetCurrentDateTime.Local DateTimeFormat: DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> LcsCurrentDateTime
     Text.ConvertDateTimeToText.FromCustomDateTime DateTime: LcsCurrentDateTime CustomFormat: $'''_yyyy-MM-ddThh-mm''' Result=> LcsNewFileDateTime
-    Text.Replace Text: LcsInputCsvFilePath['File input'] TextToFind: $'''.csv''' IsRegEx: False IgnoreCase: False ReplaceWith: $'''%''%''' ActivateEscapeSequences: False Result=> LcsNewfilePath
+    Text.Replace.ReplaceText Text: LcsInputCsvFilePath['File input'] TextToFind: $'''.csv''' IgnoreCase: False ReplaceWith: $'''%''%''' ActivateEscapeSequences: False ComparisonType: Text.TextComparisonType.CultureSensitive Result=> LcsNewfilePath
     File.WriteToCSVFile.WriteCSV VariableToWrite: LcsCsvTable CSVFile: LcsNewfilePath + LcsNewFileDateTime + '.csv' CsvFileEncoding: File.CSVEncoding.UTF8 IncludeColumnNames: False IfFileExists: File.IfFileExists.Overwrite ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault
 END FUNCTION
 FUNCTION LcsPython GLOBAL
