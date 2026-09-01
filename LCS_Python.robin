@@ -1,4 +1,4 @@
-﻿**REGION Single Pair Comparsion
+**REGION Single Pair Comparsion
 DISABLE SET LcsInputStringB TO $'''Britney Alejandro Hughes'''
 DISABLE SET LcsInputStringA TO $'''Britni Alessandro'''
 DISABLE SET LcsPyPairList TO $'''LCS(\"%LcsInputStringA%\", \"%LcsInputStringB%\")'''
