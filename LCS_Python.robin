@@ -1,0 +1,83 @@
+**REGION Single Pair Comparsion
+DISABLE SET LcsInputStringB TO $'''Britney Alejandro Hughes'''
+DISABLE SET LcsInputStringA TO $'''Britni Alessandro'''
+DISABLE SET LcsPyPairList TO $'''LCS(\"%LcsInputStringA%\", \"%LcsInputStringB%\")'''
+DISABLE CALL LcsPython
+DISABLE Display.ShowMessageDialog.ShowMessage Message: $'''fuzzy: %LcsFuzzyRatio%''' Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: False
+**ENDREGION
+**REGION CSV Table Comparsion
+CALL LcsCsvCompare
+**ENDREGION
+FUNCTION LcsCsvCompare GLOBAL
+    @@statistics_statistics_statistics_Input_File: '1'
+@@statistics_statistics_statistics_Action_Submit: '1'
+Display.ShowCustomDialog CardTemplateJson: '''{
+  \"type\": \"AdaptiveCard\",
+  \"version\": \"1.4\",
+  \"id\": \"AdaptiveCard\",
+  \"body\": [
+    {
+      \"type\": \"Input.File\",
+      \"id\": \"File input\",
+      \"value\": \"${File_input_Value}\",
+      \"label\": \"${File_input_Label}\",
+      \"spacing\": \"medium\",
+      \"separator\": true
+    }
+  ],
+  \"actions\": [
+    {
+      \"type\": \"Action.Submit\",
+      \"id\": \"Submit\",
+      \"title\": \"${Submit_Title}\"
+    }
+  ]
+}''' CustomFormData=> LcsInputCsvFilePath @File_input_Label: $'''CSV File''' @File_input_Value: $'''C:\\Users\\win10\\Desktop\\9996\\corner_cases_new.csv''' @Submit_Title: $'''Ok'''
+    Variables.CreateNewList List=> LcsPyPairList
+    File.ReadFromCSVFile.ReadCSV CSVFile: LcsInputCsvFilePath['File input'] Encoding: File.CSVEncoding.UTF8 TrimFields: True FirstLineContainsColumnNames: False ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault CSVTable=> LcsCsvTable
+    LOOP FOREACH LcsCurrentItem IN LcsCsvTable
+        # generate all pairs as python command
+        Variables.AddItemToList Item: $'''LCS(\"%LcsCurrentItem[0]%\", \"%LcsCurrentItem[1]%\")''' List: LcsPyPairList
+    END
+    CALL LcsPython
+    Text.SplitText.Split Text: LcsFuzzyRatio StandardDelimiter: Text.StandardDelimiter.NewLine DelimiterTimes: 1 Result=> LcsFuzzyRatioList
+    Variables.AddColumnToDataTable.AppendColumnToDataTable DataTable: LcsCsvTable ColumnName: $'''Similarity'''
+    # add result to datatable new column
+    LOOP LcsLoopIndex FROM 0 TO LcsCsvTable.RowsCount - 1 STEP 1
+        Variables.ModifyDataTableItem DataTable: LcsCsvTable ColumnNameOrIndex: 2 RowIndex: LcsLoopIndex Value: LcsFuzzyRatioList[LcsLoopIndex]
+    END
+    # new csv file name with datetime
+    DateTime.GetCurrentDateTime.Local DateTimeFormat: DateTime.DateTimeFormat.DateAndTime CurrentDateTime=> LcsCurrentDateTime
+    Text.ConvertDateTimeToText.FromCustomDateTime DateTime: LcsCurrentDateTime CustomFormat: $'''_yyyy-MM-ddThh-mm''' Result=> LcsNewFileDateTime
+    Text.Replace Text: LcsInputCsvFilePath['File input'] TextToFind: $'''.csv''' IsRegEx: False IgnoreCase: False ReplaceWith: $'''%''%''' ActivateEscapeSequences: False Result=> LcsNewfilePath
+    File.WriteToCSVFile.WriteCSV VariableToWrite: LcsCsvTable CSVFile: LcsNewfilePath + LcsNewFileDateTime + '.csv' CsvFileEncoding: File.CSVEncoding.UTF8 IncludeColumnNames: False IfFileExists: File.IfFileExists.Overwrite ColumnsSeparator: File.CSVColumnsSeparator.SystemDefault
+END FUNCTION
+FUNCTION LcsPython GLOBAL
+    # levenshtein partial
+    Scripting.RunPythonScript PythonCode: $'''def LCS(X, Y):
+    if X == \"\" or Y ==\"\": #any test is empty
+        ratio = 0
+    elif X == Y: #identical
+        ratio = 1
+    else:
+        X = X.lower()
+        Y = Y.lower()
+        m = len(X)
+        n = len(Y)
+        C = [[0] * (n + 1) for _ in range(m + 1)]
+        for i in range(1, m+1):
+            for j in range(1, n+1):
+                if X[i-1] == Y[j-1]: 
+                    C[i][j] = C[i-1][j-1] + 1
+                else:
+                    C[i][j] = max(C[i][j-1], C[i-1][j])
+                
+        ratio = round(2*(C[len(X)][len(Y)])/(len(X)+len(Y)), 2)
+    print(\"{:.2f}\".format(ratio))
+
+%LcsPyPairList%''' PythonVersion: System.PythonVersion.Python3 ScriptOutput=> LcsFuzzyRatio ScriptError=> LcsPyScriptError
+    # message when error
+    IF IsNotEmpty(LcsPyScriptError) THEN
+        Display.ShowMessageDialog.ShowMessage Message: LcsPyScriptError Icon: Display.Icon.None Buttons: Display.Buttons.OK DefaultButton: Display.DefaultButton.Button1 IsTopMost: False
+    END
+END FUNCTION
