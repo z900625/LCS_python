@@ -8,7 +8,6 @@ DISABLE Display.ShowMessageDialog.ShowMessage Message: $'''fuzzy: %LcsFuzzyRatio
 **REGION CSV Table Comparsion
 CALL LcsCsvCompare
 **ENDREGION
-
 FUNCTION LcsCsvCompare GLOBAL
     @@statistics_statistics_statistics_Input_File: '1'
 @@statistics_statistics_statistics_Action_Submit: '1'
